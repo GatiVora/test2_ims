@@ -145,7 +145,18 @@ AUTH_USER_MODEL = 'account.User'
 REST_FRAMEWORK = { 
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
+    ),
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '20/hour',
+        'user': '100/hour',
+        'interview_feedback': '30/day',
+        'job_application': '10/day',
+    },
+    'EXCEPTION_HANDLER': 'ims.exceptions.custom_exception_handler',
 } 
 
 SIMPLE_JWT = {

@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 
 from account.api.serializers import UserSerializer
 from account.models import User
@@ -10,6 +11,7 @@ from account.models import User
 from interview.models import Job,JobApplication,InterviewRound,ApplicationRound,Feedback
 from interview.api.serializers import JobSerializer,JobApplicationSerializer,InterviewRoundSerializer,ApplicationRoundSerializer,FeedbackSerializer,JobApplicationStatusUpdateSerializer
 from interview.api.permissions import IsAdmin, IsInterviewer, IsCandidate, IsAdminOrInterviewer, AdminFullInterviewerReadOnly
+from interview.api.throttling import FeedbackRateThrottle, JobApplicationRateThrottle
 
 
 class JobListCreateView(generics.ListCreateAPIView):
@@ -54,6 +56,7 @@ class JobApplicationListView(generics.ListCreateAPIView):
     queryset = JobApplication.objects.all()
     serializer_class = JobApplicationSerializer
     permission_classes = [IsAuthenticated]
+    throttle_classes = [UserRateThrottle, JobApplicationRateThrottle]
     filter_backends = [DjangoFilterBackend,filters.OrderingFilter]
     filterset_fields = ['status', 'is_selected', 'job']
     ordering_fields = ['applied_on', 'status']
@@ -64,6 +67,12 @@ class JobApplicationListView(generics.ListCreateAPIView):
         else:
             self.permission_classes = [IsAuthenticated, AdminFullInterviewerReadOnly]  # Admin and interviewer can view
         return super().get_permissions()
+    
+    def get_throttles(self):
+        if self.request.method == 'POST':
+            # Apply job application throttle only for POST requests (new applications)
+            return [JobApplicationRateThrottle()]
+        return [UserRateThrottle()]
         
     def get_queryset(self):
         user = self.request.user
@@ -150,6 +159,7 @@ class ApplicationRoundDetailView(generics.RetrieveUpdateDestroyAPIView):
 class FeedbackCreateView(generics.CreateAPIView):
     serializer_class = FeedbackSerializer
     permission_classes = [IsAuthenticated, IsInterviewer]
+    throttle_classes = [FeedbackRateThrottle]
 
     def perform_create(self, serializer):
         user = self.request.user
