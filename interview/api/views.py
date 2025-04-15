@@ -161,7 +161,11 @@ class FeedbackCreateView(generics.CreateAPIView):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        serializer.save()
+        feedback = serializer.save()
+        
+        # Trigger async task to send notification emails
+        from interview.tasks import send_feedback_notification
+        send_feedback_notification.delay(feedback.id)
 
 class FeedbackListView(generics.ListAPIView):
     """
