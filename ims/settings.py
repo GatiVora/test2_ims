@@ -195,6 +195,9 @@ EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=False, cast=bool)
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@ims.com')
 
+# Company Information
+COMPANY_NAME = config('COMPANY_NAME', default='Interview Management System')
+
 # Celery Beat settings
 CELERY_BEAT_SCHEDULE = {
     'daily-interview-reminders': {
