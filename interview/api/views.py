@@ -12,6 +12,7 @@ from interview.models import Job,JobApplication,InterviewRound,ApplicationRound,
 from interview.api.serializers import JobSerializer,JobApplicationSerializer,InterviewRoundSerializer,ApplicationRoundSerializer,FeedbackSerializer,JobApplicationStatusUpdateSerializer
 from interview.api.permissions import IsAdmin, IsInterviewer, IsCandidate, IsAdminOrInterviewer, AdminFullInterviewerReadOnly
 from interview.api.throttling import FeedbackRateThrottle, JobApplicationRateThrottle
+from interview.db_procedures import select_candidate, update_application_status, get_application_statistics
 
 
 class JobListCreateView(generics.ListCreateAPIView):
@@ -100,11 +101,19 @@ class SelectCandidateView(generics.UpdateAPIView):
     permission_classes = [IsAuthenticated, IsAdmin]  # Only admins can select candidates
 
     def update(self, request, *args, **kwargs):
+        # Get the application instance
         instance = self.get_object()
-        instance.status = 'closed'
-        instance.is_selected = True
-        instance.save()
         
+        # Use our stored procedure to select the candidate
+        select_candidate(
+            application_id=instance.id,
+            selected_by=request.user.email
+        )
+        
+        # Refresh from database to get the updated instance
+        instance.refresh_from_db()
+        
+        # Return the updated instance
         serializer = self.get_serializer(instance)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
@@ -269,6 +278,26 @@ class UpcomingInterviewsView(generics.ListAPIView):
             return ApplicationRound.objects.filter(
                 scheduled_time__gt=timezone.now()
             ).order_by('scheduled_time')
+
+class ApplicationStatisticsView(generics.RetrieveAPIView):
+    """
+    Get application statistics for all jobs or a specific job.
+    
+    Use ?job_id=<id> to get statistics for a specific job.
+    """
+    permission_classes = [IsAuthenticated, IsAdmin]  # Only admins can view statistics
+    
+    def retrieve(self, request, *args, **kwargs):
+        job_id = request.query_params.get('job_id')
+        
+        if job_id:
+            # Get statistics for a specific job
+            statistics = get_application_statistics(job_id=job_id)
+        else:
+            # Get statistics for all jobs
+            statistics = get_application_statistics()
+            
+        return Response(statistics)
 
 
 

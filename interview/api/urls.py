@@ -1,7 +1,7 @@
 from django.urls import path
 from interview.api.views import (JobListCreateView,JobDetailView,JobApplicationsListView,OpenJobsListView,JobApplicationListView,
                                  JobApplicationDetailView,SelectCandidateView,MyApplicationsListView,InterviewRoundListView,
-                                 ApplicationRoundListView,FeedbackCreateView,FeedbackListView)
+                                 ApplicationRoundListView,FeedbackCreateView,FeedbackListView,ApplicationStatisticsView)
 
 urlpatterns = [
     path('job/',JobListCreateView.as_view(),name='job-list-create'),
@@ -13,6 +13,7 @@ urlpatterns = [
     path('applications/<int:pk>',JobApplicationDetailView.as_view(),name='application-detail'),
     path('applications/<int:pk>/select/',SelectCandidateView.as_view(),name='select-candidate'),
     path('my-applications/',MyApplicationsListView.as_view(),name='my-applications'),
+    path('applications/statistics/',ApplicationStatisticsView.as_view(),name='application-statistics'),
 
     path('interview-rounds/',InterviewRoundListView.as_view(),name='rounds-list'),
 
